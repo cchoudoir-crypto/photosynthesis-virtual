@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Photosynthesis Rate Lab — Virtual Elodea Investigation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#f4f6f1; --card:#ffffff; --ink:#1d2a22; --muted:#5c6b61; --line:#dde3da;
+    --green:#2f7d4f; --green-soft:#e3f1e8; --amber:#b7791f; --amber-soft:#fdf3e1;
+    --red:#b23b3b; --red-soft:#fbe9e9; --blue:#2c6aa0;
+    --radius:12px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.45}
+  header{background:linear-gradient(120deg,#1f5c3a,#2f7d4f);color:#fff;padding:18px 24px}
+  header h1{margin:0;font-size:22px;font-weight:700}
+  header p{margin:4px 0 0;opacity:.88;font-size:14px}
+  main{max-width:1240px;margin:0 auto;padding:18px;display:grid;gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+  .card h2{margin:0 0 10px;font-size:16px;display:flex;align-items:center;gap:8px}
+  .step{display:inline-grid;place-items:center;width:24px;height:24px;border-radius:50%;background:var(--green);color:#fff;font-size:13px;font-weight:700;flex:none}
+  .row{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(300px,1fr);gap:16px}
+  @media (max-width:900px){.row{grid-template-columns:1fr}}
+  canvas{display:block;width:100%;height:auto;border-radius:10px}
+  #scene{background:#e9eee6}
+  .hud{display:flex;flex-wrap:wrap;gap:10px;margin-top:10px}
+  .stat{flex:1 1 120px;background:#f7f9f6;border:1px solid var(--line);border-radius:10px;padding:8px 12px}
+  .stat .k{font-size:12px;color:var(--muted);letter-spacing:.04em}
+  .stat .v{font-family:"JetBrains Mono",monospace;font-size:22px}
+  .ctrl{border:1px solid var(--line);border-radius:10px;padding:10px 12px;margin-bottom:10px;transition:.15s}
+  .ctrl.iv{border-color:var(--green);background:var(--green-soft)}
+  .ctrl .top{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .ctrl label{font-weight:600}
+  .tag{font-size:11px;font-weight:700;padding:2px 8px;border-radius:99px;background:#eceff0;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+  .ctrl.iv .tag{background:var(--green);color:#fff}
+  .val{font-family:"JetBrains Mono",monospace;font-size:14px}
+  input[type=range]{width:100%;accent-color:var(--green);margin:8px 0 2px}
+  .sub{font-size:12px;color:var(--muted)}
+  select,input[type=text],textarea{font:inherit;padding:6px 8px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--ink)}
+  textarea{width:100%;resize:vertical;min-height:54px}
+  button{font:inherit;font-weight:600;border:0;border-radius:8px;padding:9px 14px;cursor:pointer;background:var(--green);color:#fff}
+  button:hover{filter:brightness(1.08)}
+  button:disabled{opacity:.45;cursor:not-allowed;filter:none}
+  button.ghost{background:#fff;color:var(--ink);border:1px solid var(--line)}
+  button.warn{background:var(--red)}
+  button.big{padding:12px 18px;font-size:16px}
+  .btns{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+  .setup{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+  .setup .field label{display:block;font-weight:600;margin-bottom:4px;font-size:14px}
+  .setup .field select,.setup .field input{width:100%}
+  .banner{border-radius:10px;padding:9px 12px;font-size:14px;margin-top:10px;display:none}
+  .banner.show{display:block}
+  .banner.warn{background:var(--amber-soft);border:1px solid #f0d49b;color:#7a4f0e}
+  .banner.ok{background:var(--green-soft);border:1px solid #b9dcc6;color:#1f5c3a}
+  table{width:100%;border-collapse:collapse;font-size:14px}
+  th,td{padding:7px 8px;border-bottom:1px solid var(--line);text-align:center}
+  th{background:#f2f5f0;font-size:12px;color:var(--muted)}
+  td.ivcol,th.ivcol{background:var(--green-soft);font-weight:600}
+  td.dvcol,th.dvcol{background:#e8f0f8;font-weight:600}
+  .tablewrap{max-height:330px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+  .del{background:none;color:var(--red);padding:2px 6px;font-size:16px}
+  .empty{padding:22px;text-align:center;color:var(--muted)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted);margin-top:8px}
+  .legend span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px;background:var(--c)}
+  .tally{font-size:20px;padding:14px 22px;background:var(--blue)}
+  details{border:1px solid var(--line);border-radius:10px;padding:10px 14px;background:#fafbf9}
+  details+details{margin-top:10px}
+  summary{cursor:pointer;font-weight:600}
+  ol.q li{margin:8px 0}
+  .modal-bg{position:fixed;inset:0;background:rgba(20,30,24,.45);display:none;place-items:center;z-index:10}
+  .modal-bg.show{display:grid}
+  .modal{background:#fff;border-radius:14px;padding:20px;max-width:420px;width:92%}
+  .modal h3{margin:0 0 8px}
+  .chk{display:flex;align-items:center;gap:6px;font-size:14px}
+  .vars{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:14px}
+  .vars div{background:#f7f9f6;border-radius:8px;padding:8px 10px;border:1px solid var(--line)}
+  .vars b{display:block;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+</style>
+</head>
+<body>
+<header>
+  <h1>🌿 Photosynthesis Rate Lab</h1>
+  <p>Virtual Elodea investigation · Measure how environmental factors affect the rate of O₂ production and CO₂ consumption in an aquatic plant.</p>
+</header>
+
+<main>
+  <!-- STEP 1: SETUP -->
+  <section class="card">
+    <h2><span class="step">1</span> Plan your experiment</h2>
+    <div class="setup">
+      <div class="field">
+        <label for="ivSelect">Independent variable (what you change)</label>
+        <select id="ivSelect">
+          <option value="light">Light intensity (%)</option>
+          <option value="temp">Water temperature (°C)</option>
+          <option value="co2">CO₂ supply — baking soda (% NaHCO₃)</option>
+          <option value="color">Light color (wavelength)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Dependent variable (what you measure)</label>
+        <input type="text" value="O₂ production &amp; CO₂ consumption (µmol/min)" readonly>
+      </div>
+      <div class="field">
+        <label for="countMode">Bubble counting</label>
+        <select id="countMode">
+          <option value="auto">Automatic counter</option>
+          <option value="manual">I'll count the bubbles myself (tally button)</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="speed">Trial speed (each trial = 1 minute of lab time)</label>
+        <select id="speed">
+          <option value="1">Real time (60 s)</option>
+          <option value="3" selected>3× faster (20 s)</option>
+          <option value="10">10× faster (6 s)</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <label for="hyp" style="font-weight:600;font-size:14px">Hypothesis (If… then… because…)</label>
+      <textarea id="hyp" placeholder="If the light intensity increases, then the rate of photosynthesis will… because…"></textarea>
+    </div>
+  </section>
+
+  <!-- STEP 2: LAB -->
+  <div class="row">
+    <section class="card">
+      <h2><span class="step">2</span> Run trials</h2>
+      <canvas id="scene" width="760" height="440" aria-label="Elodea plant in a test tube inside a water bath, with a lamp"></canvas>
+      <div class="hud">
+        <div class="stat"><div class="k">Trial timer</div><div class="v" id="timer">0:00</div></div>
+        <div class="stat"><div class="k">O₂ bubbles counted</div><div class="v" id="count">—</div></div>
+        <div class="stat"><div class="k">CO₂ probe (mg/L)</div><div class="v" id="probe">—</div></div>
+        <div class="stat"><div class="k">Status</div><div class="v" id="status" style="font-size:15px;padding-top:6px">Ready</div></div>
+      </div>
+      <div class="btns" style="margin-top:12px">
+        <button class="big" id="startBtn">▶ Start 1‑minute trial</button>
+        <button class="ghost" id="stopBtn" disabled>■ Cancel trial</button>
+        <button class="tally" id="tallyBtn" style="display:none" disabled>+1 Bubble <span class="sub" style="color:#dfe9f3">(or Space)</span></button>
+      </div>
+      <div class="banner warn" id="ctrlWarn"></div>
+      <div class="banner ok" id="trialMsg"></div>
+    </section>
+
+    <section class="card">
+      <h2><span class="step">⚙</span> Lab conditions</h2>
+      <div class="ctrl" data-var="light">
+        <div class="top"><label for="light">💡 Light intensity</label><span class="tag">Controlled</span></div>
+        <input type="range" id="light" min="0" max="100" step="5" value="60">
+        <div class="top"><span class="sub" id="luxNote"></span><span class="val" id="lightVal"></span></div>
+      </div>
+      <div class="ctrl" data-var="temp">
+        <div class="top"><label for="temp">🌡️ Water temperature</label><span class="tag">Controlled</span></div>
+        <input type="range" id="temp" min="0" max="50" step="1" value="25">
+        <div class="top"><span class="sub">Water bath around the test tube</span><span class="val" id="tempVal"></span></div>
+      </div>
+      <div class="ctrl" data-var="co2">
+        <div class="top"><label for="co2">🫧 Baking soda (CO₂ source)</label><span class="tag">Controlled</span></div>
+        <input type="range" id="co2" min="0" max="1" step="0.05" value="0.5">
+        <div class="top"><span class="sub">NaHCO₃ dissolved in the water</span><span class="val" id="co2Val"></span></div>
+      </div>
+      <div class="ctrl" data-var="color">
+        <div class="top"><label for="color">🌈 Light color (filter)</label><span class="tag">Controlled</span></div>
+        <select id="color" style="width:100%;margin-top:8px">
+          <option value="white">White (full spectrum)</option>
+          <option value="red">Red (~660 nm)</option>
+          <option value="blue">Blue (~450 nm)</option>
+          <option value="green">Green (~530 nm)</option>
+        </select>
+      </div>
+      <details style="margin:6px 0 10px"><summary>📏 How the two measurements work</summary>
+        <p class="sub" style="margin:8px 0 4px"><b>O₂ production:</b> count the O₂ bubbles released in 1 minute. Each bubble holds about 4 µL of O₂ ≈ <b>0.16 µmol O₂</b>.<br>O₂ rate (µmol/min) = bubbles × 0.16</p>
+        <p class="sub" style="margin:4px 0"><b>CO₂ consumption:</b> a dissolved‑CO₂ probe in the 25 mL of water reads CO₂ at the start and end of the trial. CO₂ has a molar mass of 44 g/mol.<br>CO₂ rate (µmol/min) = (start − end, mg/L) × 0.025 L ÷ 44 × 1000</p>
+        <p class="sub" style="margin:4px 0 0">A negative CO₂ consumption means CO₂ <i>increased</i>: respiration released more than photosynthesis used.</p>
+      </details>
+      <p class="sub" style="margin:4px 0 0">Change only your <b>independent variable</b> between trials. Keep everything else the same. Run at least <b>3 trials</b> at each setting.</p>
+    </section>
+  </div>
+
+  <!-- STEP 3: DATA -->
+  <section class="card">
+    <h2><span class="step">3</span> Data table</h2>
+    <div class="vars" id="varSummary"></div>
+    <div class="tablewrap" style="margin-top:12px">
+      <table>
+        <thead id="thead"></thead>
+        <tbody id="tbody"></tbody>
+      </table>
+      <div class="empty" id="emptyMsg">No trials yet. Set your conditions and press <b>Start 1‑minute trial</b>.</div>
+    </div>
+    <h3 style="font-size:14px;margin:16px 0 6px">Averages by independent‑variable setting</h3>
+    <div class="tablewrap">
+      <table><thead id="avgHead"></thead><tbody id="avgBody"></tbody></table>
+    </div>
+    <div class="btns" style="margin-top:12px">
+      <button class="ghost" id="copyBtn">📋 Copy data (paste into Google Sheets)</button>
+      <button class="ghost" id="clearBtn">🗑 Clear all data</button>
+      <span class="sub" id="copyMsg"></span>
+    </div>
+  </section>
+
+  <!-- STEP 4: GRAPH -->
+  <section class="card">
+    <h2><span class="step">4</span> Graph your results</h2>
+    <div class="btns" style="margin-bottom:10px">
+      <label class="chk">Plot: <select id="plotWhich"><option value="both">O₂ produced &amp; CO₂ consumed</option><option value="o2">O₂ produced only</option><option value="co2use">CO₂ consumed only</option></select></label>
+      <label class="chk"><input type="checkbox" id="showTrials" checked> Show individual trials</label>
+      <label class="chk"><input type="checkbox" id="showLine" checked> Connect averages</label>
+      <label class="chk">Graph title: <input type="text" id="graphTitle" style="min-width:300px"></label>
+    </div>
+    <canvas id="graph" width="1100" height="520" aria-label="Graph of results"></canvas>
+    <div class="legend" id="legend"></div>
+  </section>
+
+  <!-- STEP 5: ANALYSIS -->
+  <section class="card">
+    <h2><span class="step">5</span> Analyze &amp; conclude</h2>
+    <details open>
+      <summary>Analysis questions</summary>
+      <ol class="q">
+        <li>Identify your independent variable, dependent variable, and at least three controlled variables.</li>
+        <li>Describe the trend in your graph. Where does the rate increase, level off, or decrease?</li>
+        <li>Why were the bubble counts slightly different for repeated trials at the same setting? Why does averaging multiple trials make your results more reliable?</li>
+        <li>What gas is in the bubbles? Write the balanced equation for photosynthesis and circle the product you measured.</li>
+        <li><b>Light:</b> Why does the rate stop increasing at high light intensity? What becomes the <i>limiting factor</i>? Why are there no bubbles at very low light even though the plant is alive?</li>
+        <li><b>Temperature:</b> Explain the shape of the temperature curve using the idea of enzymes (e.g., RuBisCO). What happens to enzymes above the optimum temperature?</li>
+        <li><b>CO₂:</b> Which stage of photosynthesis uses CO₂? Explain why adding more baking soda increases the rate only up to a point.</li>
+        <li>Compare your O₂ production and CO₂ consumption rates. What is the approximate ratio? Use the balanced equation (6CO₂ + 6H₂O → C₆H₁₂O₆ + 6O₂) to explain why.</li>
+        <li>Run a trial at 0% light. What happened to the CO₂ level, and why were there no O₂ bubbles? Which process was the plant still carrying out?</li>
+        <li><b>Color:</b> Which light color produced the lowest rate? Relate this to the color the plant appears and to the absorption spectrum of chlorophyll.</li>
+        <li>Write a claim–evidence–reasoning (CER) conclusion that answers your research question. Was your hypothesis supported?</li>
+      </ol>
+    </details>
+    <details>
+      <summary>Teacher notes — how the model works</summary>
+      <ul>
+        <li>Net O₂ bubbles = gross photosynthesis − respiration (bubbles can't go below zero, so very dim light gives 0 — the light compensation point).</li>
+        <li><b>Light</b> follows a saturation curve (rate levels off near 60–100%). <b>Temperature</b> follows an enzyme curve with an optimum near 30 °C, steeper drop above it, near 0 by ~45 °C. <b>CO₂ (NaHCO₃)</b> follows a saturation curve; 0% still gives a small rate from dissolved CO₂. <b>Color:</b> red ≈ white &gt; blue &gt; green (green is mostly reflected).</li>
+        <li><b>Two dependent variables:</b> O₂ produced (bubbles × 0.16 µmol) and CO₂ consumed (probe drop converted to µmol, 25 mL water). Both track net photosynthesis at roughly a 1:1 molar ratio. In the dark or at extreme temperatures, CO₂ consumption goes negative (respiration) while bubbles stay at 0 — good for discussing the compensation point.</li>
+        <li>Bubbles are released randomly (a Poisson process), so repeated trials vary naturally — good for discussing reliability and averaging. Students get a warning if they change a controlled variable mid‑experiment.</li>
+        <li>Default conditions: 60% light, 25 °C, 0.5% NaHCO₃, white light. Manual counting mode works best at real‑time speed.</li>
+        <li>Data can be copied as tab‑separated text and pasted straight into Google Sheets for a graphing extension.</li>
+      </ul>
+    </details>
+  </section>
+</main>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <h3 id="mTitle">Change independent variable?</h3>
+    <p id="mText" class="sub" style="font-size:14px"></p>
+    <div class="btns" style="justify-content:flex-end">
+      <button class="ghost" id="mCancel">Cancel</button>
+      <button class="warn" id="mOk">Clear data &amp; continue</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  // ---------- Variable metadata ----------
+  const VARS = {
+    light:{name:"Light intensity", unit:"%", short:"Light (%)", fmt:v=>v+"%"},
+    temp:{name:"Water temperature", unit:"°C", short:"Temp (°C)", fmt:v=>v+" °C"},
+    co2:{name:"Baking soda (NaHCO₃)", unit:"%", short:"NaHCO₃ (%)", fmt:v=>(+v).toFixed(2)+"%"},
+    color:{name:"Light color", unit:"", short:"Light color", fmt:v=>v[0].toUpperCase()+v.slice(1)}
+  };
+  const COLOR_ORDER = ["white","red","blue","green"];
+  const COLOR_EFF = {white:1.0, red:0.95, blue:0.85, green:0.3};
+  const LAMP_RGB = {white:[255,244,200], red:[255,70,60], blue:[80,130,255], green:[80,220,110]};
+
+  const $ = id => document.getElementById(id);
+  const el = {light:$("light"), temp:$("temp"), co2:$("co2"), color:$("color")};
+
+  let iv = "light";
+  let data = [];   // {n, light,temp,co2,color, bubbles, rate}
+  let trialNo = 0;
+
+  // ---------- Photosynthesis model ----------
+  function netRate(s){
+    const fL = s.light/(s.light+14) * COLOR_EFF[s.color];
+    const T = s.temp;
+    const fT = T<=30 ? Math.exp(-Math.pow((T-30)/14,2)) : Math.exp(-Math.pow((T-30)/7,2));
+    const fC = ((s.co2+0.02)/(s.co2+0.2)) / (1.02/1.2);
+    const gross = 64 * fL * fT * fC;
+    const resp = Math.min(6, 3*Math.pow(2,(T-25)/10)) * (T>45 ? 0.3 : 1);
+    return gross - resp; // net, in bubble-equivalents per minute (negative = net respiration)
+  }
+  const UMOL_PER_BUBBLE = 0.16, WATER_L = 0.025;
+  function gauss(){ let u=0,v=0; while(!u)u=Math.random(); while(!v)v=Math.random(); return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v); }
+  function co2Baseline(s){ return 3 + 40*s.co2; } // dissolved CO2, mg/L
+  function settings(){
+    return {light:+el.light.value, temp:+el.temp.value, co2:+el.co2.value, color:el.color.value};
+  }
+
+  // ---------- Controls UI ----------
+  function refreshLabels(){
+    const s = settings();
+    $("lightVal").textContent = s.light+"%";
+    $("luxNote").textContent = "≈ "+(s.light*100).toLocaleString()+" lux at the plant";
+    $("tempVal").textContent = s.temp+" °C";
+    $("co2Val").textContent = s.co2.toFixed(2)+"%";
+    document.querySelectorAll(".ctrl").forEach(c=>{
+      const isIV = c.dataset.var===iv;
+      c.classList.toggle("iv", isIV);
+      c.querySelector(".tag").textContent = isIV ? "Independent" : "Controlled";
+    });
+    checkControlled();
+    renderVarSummary();
+    if(!$("graphTitle").dataset.touched) $("graphTitle").value = "Effect of "+VARS[iv].name+" on O₂ Production and CO₂ Consumption";
+  }
+  ["light","temp","co2","color"].forEach(k=>el[k].addEventListener("input",refreshLabels));
+
+  function checkControlled(){
+    const w = $("ctrlWarn");
+    if(!data.length){ w.classList.remove("show"); return; }
+    const ref = data[0], s = settings(), changed=[];
+    for(const k of Object.keys(VARS)){
+      if(k===iv) continue;
+      if(String(ref[k])!==String(s[k])) changed.push(VARS[k].name+" (was "+VARS[k].fmt(ref[k])+")");
+    }
+    if(changed.length){
+      w.innerHTML = "⚠️ <b>Controlled variable changed:</b> "+changed.join(", ")+". A fair test changes only the independent variable — set it back before your next trial.";
+      w.classList.add("show");
+    } else w.classList.remove("show");
+  }
+
+  function renderVarSummary(){
+    const ctrls = Object.keys(VARS).filter(k=>k!==iv).map(k=>VARS[k].name).join(", ");
+    $("varSummary").innerHTML =
+      `<div><b>Independent variable</b>${VARS[iv].name}${VARS[iv].unit?" ("+VARS[iv].unit+")":""}</div>
+       <div><b>Dependent variables</b>O₂ production &amp; CO₂ consumption (µmol/min)</div>
+       <div style="grid-column:1/-1"><b>Controlled variables</b>${ctrls}, plant species &amp; size, trial length (1 min), water volume</div>`;
+  }
+
+  // ---------- Modal ----------
+  let modalOk=null;
+  function ask(title,text,ok){ $("mTitle").textContent=title; $("mText").textContent=text; modalOk=ok; $("modal").classList.add("show"); }
+  $("mCancel").onclick=()=>{ $("modal").classList.remove("show"); if(modalCancel) modalCancel(); };
+  let modalCancel=null;
+  $("mOk").onclick=()=>{ $("modal").classList.remove("show"); if(modalOk) modalOk(); };
+
+  $("ivSelect").addEventListener("change",e=>{
+    const nv = e.target.value;
+    if(data.length){
+      modalCancel=()=>{ e.target.value=iv; };
+      ask("Change independent variable?","Your data table has "+data.length+" trial(s) for "+VARS[iv].name+". Starting a new experiment clears the current data. (Copy it first if you need it.)",()=>{
+        data=[]; trialNo=0; iv=nv; $("graphTitle").dataset.touched=""; refreshLabels(); renderTable(); drawGraph();
+      });
+    } else { iv=nv; $("graphTitle").dataset.touched=""; refreshLabels(); renderTable(); drawGraph(); }
+  });
+  $("clearBtn").onclick=()=>{
+    if(!data.length) return;
+    modalCancel=null;
+    ask("Clear all data?","This deletes every trial in the data table.",()=>{ data=[]; trialNo=0; refreshLabels(); renderTable(); drawGraph(); });
+  };
+  $("countMode").addEventListener("change",()=>{
+    const m = $("countMode").value==="manual";
+    $("tallyBtn").style.display = m ? "" : "none";
+    if(m) $("speed").value="1";
+  });
+  $("graphTitle").addEventListener("input",()=>{ $("graphTitle").dataset.touched="1"; drawGraph(); });
+  $("showTrials").onchange=drawGraph; $("showLine").onchange=drawGraph;
+
+  // ---------- Scene / simulation ----------
+  const cv = $("scene"), cx = cv.getContext("2d");
+  const W=cv.width, H=cv.height;
+  const tube = {x:470, top:110, w:58, bottom:380};
+  const surfaceY = tube.top+22;
+  let bubbles=[], nextBubble=0.5, last=performance.now();
+  let probeStart=0, probeDrop=0;
+  let running=false, simT=0, trialCount=0, manualCount=0, speed=3;
+
+  function rand(a,b){return a+Math.random()*(b-a);}
+  function emitPoint(){
+    const pts=[[tube.x-8,250],[tube.x+6,225],[tube.x-2,200],[tube.x+9,280],[tube.x-10,305]];
+    const p=pts[Math.floor(Math.random()*pts.length)];
+    return {x:p[0]+rand(-3,3), y:p[1]};
+  }
+  function spawn(){
+    const p=emitPoint();
+    bubbles.push({x:p.x,y:p.y,r:rand(2.2,4.2),vy:rand(38,58),wob:rand(0,6.28)});
+    if(running){ trialCount++; if($("countMode").value==="auto") $("count").textContent=trialCount; }
+  }
+
+  function frame(now){
+    let dt=Math.min(0.05,(now-last)/1000); last=now;
+    const simDt = dt*(running?speed:1);
+    const rate = Math.max(0, netRate(settings()));
+    if(rate>0.05){
+      nextBubble -= simDt;
+      while(nextBubble<=0){ spawn(); nextBubble += -Math.log(1-Math.random())*60/rate; }
+    } else nextBubble = 1;
+    for(const b of bubbles){ b.y -= b.vy*dt*Math.min(speed,3)*(running?1:1); b.wob+=dt*5; b.x += Math.sin(b.wob)*0.25; }
+    bubbles = bubbles.filter(b=>b.y>surfaceY+2);
+    if(bubbles.length>160) bubbles.splice(0,bubbles.length-160);
+
+    if(running){
+      simT += simDt;
+      if(simT>=60){ simT=60; }
+      $("probe").textContent = (probeStart - probeDrop*(simT/60)).toFixed(1);
+      updateTimer();
+      if(simT>=60) finishTrial();
+    }
+    draw();
+    requestAnimationFrame(frame);
+  }
+
+  function updateTimer(){
+    const s=Math.floor(simT);
+    if(s>=60) $("timer").textContent="1:00"; else $("timer").textContent="0:"+String(s).padStart(2,"0");
+  }
+
+  function waterColor(T){
+    // cold blue -> neutral -> warm amber
+    const t=T/50;
+    const r=Math.round(150+100*t*t), g=Math.round(205-15*t*t), b=Math.round(245-110*t*t);
+    return `rgba(${r},${g},${b},0.75)`;
+  }
+
+  function draw(){
+    const s=settings();
+    cx.clearRect(0,0,W,H);
+    // wall + bench
+    let g=cx.createLinearGradient(0,0,0,H); g.addColorStop(0,"#eef2ea"); g.addColorStop(1,"#dfe6db");
+    cx.fillStyle=g; cx.fillRect(0,0,W,H);
+    cx.fillStyle="#b9a58a"; cx.fillRect(0,395,W,45);
+    cx.fillStyle="#a48f73"; cx.fillRect(0,395,W,5);
+
+    // lamp
+    const rgb=LAMP_RGB[s.color], I=s.light/100;
+    const lx=150, ly=170;
+    // light beam
+    if(I>0){
+      const beam=cx.createLinearGradient(lx,0,560,0);
+      beam.addColorStop(0,`rgba(${rgb},${0.45*I})`); beam.addColorStop(1,`rgba(${rgb},0)`);
+      cx.fillStyle=beam; cx.beginPath(); cx.moveTo(lx+40,ly-30); cx.lineTo(600,ly-90); cx.lineTo(600,ly+210); cx.lineTo(lx+40,ly+40); cx.closePath(); cx.fill();
+      const glow=cx.createRadialGradient(lx+38,ly+5,4,lx+38,ly+5,90);
+      glow.addColorStop(0,`rgba(${rgb},${0.9*I})`); glow.addColorStop(1,`rgba(${rgb},0)`);
+      cx.fillStyle=glow; cx.beginPath(); cx.arc(lx+38,ly+5,90,0,7); cx.fill();
+    }
+    // lamp stand
+    cx.strokeStyle="#4a514c"; cx.lineWidth=8; cx.lineCap="round";
+    cx.beginPath(); cx.moveTo(90,392); cx.lineTo(90,250); cx.lineTo(lx,ly+10); cx.stroke();
+    cx.fillStyle="#4a514c"; cx.fillRect(55,385,72,10);
+    // lamp head
+    cx.save(); cx.translate(lx,ly); cx.fillStyle="#2f3a34";
+    cx.beginPath(); cx.moveTo(-10,-30); cx.lineTo(35,-42); cx.lineTo(35,52); cx.lineTo(-10,38); cx.closePath(); cx.fill();
+    cx.fillStyle=I>0?`rgb(${rgb})`:"#8d968f"; cx.beginPath(); cx.ellipse(36,5,9,46,0,0,7); cx.fill();
+    cx.restore();
+    cx.fillStyle="#2f3a34"; cx.font="600 15px Inter"; cx.textAlign="center";
+    cx.fillText("Lamp: "+s.light+"% · "+VARS.color.fmt(s.color),150,98);
+
+    // beaker (water bath)
+    const bx=360,bw=220,bt=150,bb=392;
+    cx.fillStyle=waterColor(s.temp); cx.fillRect(bx+4,bt+40,bw-8,bb-bt-44);
+    cx.strokeStyle="rgba(60,80,90,.7)"; cx.lineWidth=3;
+    cx.beginPath(); cx.moveTo(bx,bt); cx.lineTo(bx,bb); cx.lineTo(bx+bw,bb); cx.lineTo(bx+bw,bt); cx.stroke();
+    for(let i=0;i<5;i++){ cx.beginPath(); cx.moveTo(bx+bw-2,bb-30-i*40); cx.lineTo(bx+bw-18,bb-30-i*40); cx.lineWidth=1.5; cx.stroke(); }
+    // heat shimmer / ice
+    if(s.temp<=8){ cx.fillStyle="rgba(255,255,255,.85)"; for(let i=0;i<5;i++){ cx.fillRect(bx+20+i*38,bt+44+(i%2)*6,18,14);} }
+    if(s.temp>=38){ cx.strokeStyle="rgba(200,90,30,.5)"; cx.lineWidth=2; for(let i=0;i<4;i++){ const xx=bx+30+i*50; cx.beginPath(); cx.moveTo(xx,bt+30); cx.quadraticCurveTo(xx+8,bt+18,xx,bt+6); cx.quadraticCurveTo(xx-8,bt-6,xx,bt-18); cx.stroke(); } }
+
+    // test tube
+    cx.fillStyle="rgba(205,232,240,.9)";
+    roundTube(tube.x-tube.w/2,surfaceY,tube.w,tube.bottom-surfaceY); cx.fill();
+    // baking soda tint
+    cx.fillStyle=`rgba(255,255,255,${0.25*s.co2})`; roundTube(tube.x-tube.w/2,surfaceY,tube.w,tube.bottom-surfaceY); cx.fill();
+    cx.strokeStyle="rgba(60,80,90,.85)"; cx.lineWidth=2.5; roundTube(tube.x-tube.w/2,tube.top,tube.w,tube.bottom-tube.top); cx.stroke();
+    cx.strokeStyle="rgba(60,110,140,.6)"; cx.lineWidth=1.5; cx.beginPath(); cx.moveTo(tube.x-tube.w/2+2,surfaceY); cx.lineTo(tube.x+tube.w/2-2,surfaceY); cx.stroke();
+
+    // elodea
+    drawElodea(tube.x, 372, s);
+
+    // bubbles
+    for(const b of bubbles){
+      cx.beginPath(); cx.arc(b.x,b.y,b.r,0,7);
+      cx.fillStyle="rgba(255,255,255,.85)"; cx.fill();
+      cx.strokeStyle="rgba(70,120,150,.8)"; cx.lineWidth=1; cx.stroke();
+    }
+
+    // thermometer
+    const tx=400, tTop=95, tBot=360;
+    cx.fillStyle="#fff"; cx.strokeStyle="#555"; cx.lineWidth=1.5;
+    roundRect(tx-6,tTop,12,tBot-tTop,6); cx.fill(); cx.stroke();
+    cx.beginPath(); cx.arc(tx,tBot+6,10,0,7); cx.fillStyle="#d33"; cx.fill(); cx.stroke();
+    const lvl = tBot - (s.temp/50)*(tBot-tTop-12);
+    cx.fillStyle="#d33"; cx.fillRect(tx-3,lvl,6,tBot-lvl+2);
+    cx.fillStyle="#2f3a34"; cx.font="600 15px Inter"; cx.textAlign="left";
+    cx.fillText(s.temp+" °C", tx-30, tTop-10);
+
+    // CO2 probe
+    cx.strokeStyle="#2f3a34"; cx.lineWidth=5; cx.beginPath(); cx.moveTo(tube.x+17,tube.top-40); cx.lineTo(tube.x+17,330); cx.stroke();
+    cx.fillStyle="#2c6aa0"; cx.fillRect(tube.x+13,318,8,18);
+    cx.strokeStyle="#2f3a34"; cx.lineWidth=2; cx.beginPath(); cx.moveTo(tube.x+17,tube.top-40); cx.quadraticCurveTo(tube.x+40,tube.top-70,600,60); cx.stroke();
+    cx.fillStyle="#1f2b33"; roundRect(600,36,140,52,8); cx.fill();
+    cx.fillStyle="#7fe0a0"; cx.font="600 12px Inter"; cx.textAlign="center"; cx.fillText("CO₂ PROBE (mg/L)",670,54);
+    cx.font="600 20px 'JetBrains Mono'"; cx.fillText(running||data.length? $("probe").textContent : co2Baseline(s).toFixed(1),670,78);
+    // labels
+    cx.textAlign="left"; cx.font="500 13px Inter"; cx.fillStyle="#2f3a34";
+    cx.fillText("O₂ bubbles", 545, 210);
+    cx.strokeStyle="#2f3a34"; cx.lineWidth=1; cx.beginPath(); cx.moveTo(542,206); cx.lineTo(tube.x+14,215); cx.stroke();
+    cx.fillText("Elodea", 545, 320); cx.beginPath(); cx.moveTo(542,316); cx.lineTo(tube.x+12,312); cx.stroke();
+    cx.fillText("NaHCO₃ "+s.co2.toFixed(2)+"%", 600, 365);
+    cx.fillText("Water bath", 600, 385);
+
+    if(running){
+      cx.fillStyle="rgba(178,59,59,.9)"; roundRect(W-150,14,136,30,15); cx.fill();
+      cx.fillStyle="#fff"; cx.font="700 14px Inter"; cx.textAlign="center"; cx.fillText("● TRIAL RUNNING",W-82,34);
+    }
+  }
+
+  function roundTube(x,y,w,h){ const r=w/2; cx.beginPath(); cx.moveTo(x,y); cx.lineTo(x,y+h-r); cx.arc(x+r,y+h-r,r,Math.PI,0,true); cx.lineTo(x+w,y); }
+  function roundRect(x,y,w,h,r){ cx.beginPath(); cx.moveTo(x+r,y); cx.arcTo(x+w,y,x+w,y+h,r); cx.arcTo(x+w,y+h,x,y+h,r); cx.arcTo(x,y+h,x,y,r); cx.arcTo(x,y,x+w,y,r); cx.closePath(); }
+
+  function drawElodea(x,base,s){
+    const health = s.temp>42 ? "#8a8f52" : "#2f8a45";
+    cx.strokeStyle="#3d6b33"; cx.lineWidth=3;
+    cx.beginPath(); cx.moveTo(x,base); cx.bezierCurveTo(x-6,320,x+8,260,x-2,190); cx.stroke();
+    // cut end
+    cx.fillStyle="#cfe3b0"; cx.beginPath(); cx.arc(x-2,190,3,0,7); cx.fill();
+    for(let i=0;i<13;i++){
+      const t=i/12, yy=base-10-t*170;
+      const xx=x + Math.sin(t*3)*5;
+      for(const d of [-1,1]){
+        cx.save(); cx.translate(xx,yy); cx.rotate(d*(0.9-t*0.3));
+        cx.fillStyle=health; cx.beginPath(); cx.ellipse(d*9,0,10,3.4,0,0,7); cx.fill();
+        cx.restore();
+      }
+    }
+  }
+
+  // ---------- Trials ----------
+  $("startBtn").onclick=startTrial;
+  $("stopBtn").onclick=()=>{ if(!running) return; running=false; setRunningUI(false); $("status").textContent="Cancelled"; simT=0; updateTimer(); };
+  $("tallyBtn").onclick=tally;
+  document.addEventListener("keydown",e=>{
+    if(e.code==="Space" && running && $("countMode").value==="manual" && !/INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)){ e.preventDefault(); tally(); }
+  });
+  function tally(){ if(!running) return; manualCount++; $("count").textContent=manualCount; }
+
+  function startTrial(){
+    speed=+$("speed").value; running=true; simT=0; trialCount=0; manualCount=0;
+    $("count").textContent = "0";
+    const s0=settings();
+    probeStart = Math.round((co2Baseline(s0)+gauss()*0.3)*10)/10;
+    const umol = netRate(s0)*UMOL_PER_BUBBLE*(1+gauss()*0.06) + gauss()*0.08;
+    probeDrop = Math.min(probeStart-0.2, umol*44/1000/WATER_L);
+    $("probe").textContent = probeStart.toFixed(1);
+    $("trialMsg").classList.remove("show");
+    $("status").textContent="Counting…";
+    setRunningUI(true);
+  }
+  function setRunningUI(on){
+    $("startBtn").disabled=on; $("stopBtn").disabled=!on; $("tallyBtn").disabled=!on;
+    ["light","temp","co2","color","ivSelect","countMode","speed"].forEach(id=>$(id).disabled=on);
+  }
+  function finishTrial(){
+    running=false; setRunningUI(false);
+    const manual=$("countMode").value==="manual";
+    const n = manual ? manualCount : trialCount;
+    const s=settings();
+    trialNo++;
+    const co2End = Math.round((probeStart-probeDrop)*10)/10;
+    const o2 = +(n*UMOL_PER_BUBBLE).toFixed(2);
+    const co2 = +((probeStart-co2End)*WATER_L/44*1000).toFixed(2);
+    $("probe").textContent = co2End.toFixed(1);
+    data.push({n:trialNo, ...s, bubbles:n, o2, co2Start:probeStart, co2End, co2use:co2, manual});
+    $("status").textContent="Trial "+trialNo+" recorded";
+    let msg=`✅ Trial ${trialNo} recorded: <b>${n} O₂ bubbles</b> (${o2.toFixed(2)} µmol O₂/min) and CO₂ went from ${probeStart.toFixed(1)} → ${co2End.toFixed(1)} mg/L (<b>${co2.toFixed(2)} µmol CO₂/min consumed</b>) at ${VARS[iv].name.toLowerCase()} = <b>${VARS[iv].fmt(s[iv])}</b>.`;
+    if(manual) msg += ` (Automatic counter saw ${trialCount}.)`;
+    const sameCount = data.filter(d=>String(d[iv])===String(s[iv])).length;
+    msg += sameCount<3 ? ` Run ${3-sameCount} more trial(s) at this setting.` : ` You have ${sameCount} trials here — try a new ${VARS[iv].name.toLowerCase()} setting.`;
+    $("trialMsg").innerHTML=msg; $("trialMsg").classList.add("show");
+    renderTable(); drawGraph(); checkControlled();
+  }
+
+  // ---------- Table ----------
+  function ivSortKey(v){ return iv==="color" ? COLOR_ORDER.indexOf(v) : +v; }
+  const avg=(arr,k)=>arr.reduce((a,b)=>a+b[k],0)/arr.length;
+  function groups(){
+    const m=new Map();
+    for(const d of data){ const k=String(d[iv]); if(!m.has(k)) m.set(k,[]); m.get(k).push(d); }
+    return [...m.entries()].map(([k,arr])=>({key:arr[0][iv], trials:arr, bub:avg(arr,"bubbles"), o2:avg(arr,"o2"), co2use:avg(arr,"co2use")}))
+      .sort((a,b)=>ivSortKey(a.key)-ivSortKey(b.key));
+  }
+  function renderTable(){
+    const order=[iv,...Object.keys(VARS).filter(k=>k!==iv)];
+    $("thead").innerHTML="<tr><th>Trial</th>"+order.map(k=>`<th class="${k===iv?"ivcol":""}">${VARS[k].short}</th>`).join("")+
+      `<th>O₂ bubbles<br>in 1 min</th><th class="dvcol">O₂ produced<br>(µmol/min)</th><th>CO₂ start<br>(mg/L)</th><th>CO₂ end<br>(mg/L)</th><th class="dvcol">CO₂ consumed<br>(µmol/min)</th><th></th></tr>`;
+    $("tbody").innerHTML=data.map((d,i)=>"<tr><td>"+d.n+"</td>"+order.map(k=>`<td class="${k===iv?"ivcol":""}">${VARS[k].fmt(d[k])}</td>`).join("")+
+      `<td>${d.bubbles}${d.manual?' <span class="sub">(hand)</span>':""}</td><td class="dvcol">${d.o2.toFixed(2)}</td><td>${d.co2Start.toFixed(1)}</td><td>${d.co2End.toFixed(1)}</td><td class="dvcol">${d.co2use.toFixed(2)}</td><td><button class="del" title="Delete trial" data-i="${i}">×</button></td></tr>`).join("");
+    $("emptyMsg").style.display=data.length?"none":"block";
+    $("tbody").querySelectorAll(".del").forEach(b=>b.onclick=()=>{ data.splice(+b.dataset.i,1); renderTable(); drawGraph(); checkControlled(); });
+
+    const gs=groups();
+    $("avgHead").innerHTML=`<tr><th class="ivcol">${VARS[iv].short}</th><th># Trials</th><th>Avg bubbles/min</th><th class="dvcol">Avg O₂ produced<br>(µmol/min)</th><th class="dvcol">Avg CO₂ consumed<br>(µmol/min)</th><th>CO₂ : O₂<br>ratio</th></tr>`;
+    $("avgBody").innerHTML = gs.length ? gs.map(g=>`<tr><td class="ivcol">${VARS[iv].fmt(g.key)}</td><td>${g.trials.length}</td><td>${g.bub.toFixed(1)}</td><td class="dvcol">${g.o2.toFixed(2)}</td><td class="dvcol">${g.co2use.toFixed(2)}</td><td>${g.o2>0.05?(g.co2use/g.o2).toFixed(2):"—"}</td></tr>`).join("")
+      : `<tr><td colspan="6" class="empty">Averages appear here as you collect data.</td></tr>`;
+  }
+
+  $("copyBtn").onclick=async()=>{
+    if(!data.length){ $("copyMsg").textContent="No data to copy yet."; return; }
+    const order=[iv,...Object.keys(VARS).filter(k=>k!==iv)];
+    const head=["Trial",...order.map(k=>VARS[k].short),"O2 bubbles in 1 min","O2 produced (umol/min)","CO2 start (mg/L)","CO2 end (mg/L)","CO2 consumed (umol/min)"].join("\t");
+    const rows=data.map(d=>[d.n,...order.map(k=>k==="color"?VARS.color.fmt(d[k]):d[k]),d.bubbles,d.o2,d.co2Start,d.co2End,d.co2use].join("\t"));
+    const gs=groups().map(g=>[iv==="color"?VARS.color.fmt(g.key):g.key,g.trials.length,g.bub.toFixed(1),g.o2.toFixed(2),g.co2use.toFixed(2)].join("\t"));
+    const txt=[head,...rows,"",[VARS[iv].short,"Trials","Avg bubbles/min","Avg O2 produced (umol/min)","Avg CO2 consumed (umol/min)"].join("\t"),...gs].join("\n");
+    try{ await navigator.clipboard.writeText(txt); $("copyMsg").textContent="Copied! Paste into cell A1 of a Google Sheet."; }
+    catch(e){ $("copyMsg").textContent="Copy was blocked by the browser — select the table and copy it manually."; }
+  };
+
+  // ---------- Graph ----------
+  const gc=$("graph"), gx=gc.getContext("2d");
+  const SERIES={o2:{name:"O₂ produced",c:"#2f7d4f",soft:"#9fc7ae"}, co2use:{name:"CO₂ consumed",c:"#2c6aa0",soft:"#a9c4de"}};
+  $("plotWhich").onchange=drawGraph;
+  function niceStep(range){ const raw=range/8; const p=Math.pow(10,Math.floor(Math.log10(raw))); const n=raw/p; return (n<=1?1:n<=2?2:n<=5?5:10)*p; }
+  function drawGraph(){
+    const which=$("plotWhich").value, keys= which==="both"?["o2","co2use"]:[which];
+    $("legend").innerHTML = keys.map(k=>`<span style="--c:${SERIES[k].c}">${SERIES[k].name} (average)</span>`).join("") +
+      ($("showTrials").checked && iv!=="color" ? keys.map(k=>`<span style="--c:${SERIES[k].soft}">${SERIES[k].name} (single trial)</span>`).join(""):"");
+    const GW=gc.width, GH=gc.height, m={l:96,r:30,t:56,b:78};
+    const pw=GW-m.l-m.r, ph=GH-m.t-m.b;
+    gx.clearRect(0,0,GW,GH); gx.fillStyle="#fff"; gx.fillRect(0,0,GW,GH);
+    gx.fillStyle="#1d2a22"; gx.font="700 20px Inter"; gx.textAlign="center";
+    gx.fillText($("graphTitle").value||"", GW/2, 32);
+
+    const gs=groups();
+    const vals=data.flatMap(d=>keys.map(k=>d[k]));
+    const step=niceStep(Math.max(2,Math.max(0,...vals)-Math.min(0,...vals))*1.1);
+    const yMax=Math.max(step*2,Math.ceil(Math.max(0,...vals)*1.1/step)*step);
+    const yMin=Math.floor(Math.min(0,...vals)*1.1/step)*step;
+    const Y=v=>m.t+ph-((v-yMin)/(yMax-yMin))*ph;
+    const cat = iv==="color";
+    const ranges={light:[0,100,10],temp:[0,50,5],co2:[0,1,0.1]};
+    let X, xTicks=[], list=[];
+    if(cat){
+      const cats=COLOR_ORDER.filter(c=>gs.some(g=>g.key===c));
+      list=cats.length?cats:COLOR_ORDER;
+      const bw=pw/list.length;
+      X=v=>m.l+bw*(list.indexOf(v)+0.5);
+      xTicks=list.map(c=>({v:c,label:VARS.color.fmt(c)}));
+    } else {
+      const [a,b,st]=ranges[iv];
+      X=v=>m.l+((v-a)/(b-a))*pw;
+      for(let v=a; v<=b+1e-9; v+=st) xTicks.push({v:+v.toFixed(2),label:iv==="co2"?v.toFixed(1):Math.round(v)});
+    }
+    gx.strokeStyle="#e6ebe4"; gx.lineWidth=1; gx.font="500 14px Inter"; gx.fillStyle="#5c6b61";
+    gx.textAlign="right";
+    const dec = step<1?1:0;
+    for(let v=yMin; v<=yMax+1e-9; v+=step){ gx.beginPath(); gx.moveTo(m.l,Y(v)); gx.lineTo(m.l+pw,Y(v)); gx.stroke(); gx.fillText(v.toFixed(dec),m.l-10,Y(v)+5); }
+    gx.textAlign="center";
+    for(const t of xTicks){ const xx=X(t.v); if(!cat){ gx.beginPath(); gx.moveTo(xx,m.t); gx.lineTo(xx,m.t+ph); gx.stroke(); } gx.fillText(t.label,xx,m.t+ph+22); }
+    gx.strokeStyle="#1d2a22"; gx.lineWidth=2; gx.beginPath(); gx.moveTo(m.l,m.t); gx.lineTo(m.l,m.t+ph); gx.lineTo(m.l+pw,m.t+ph); gx.stroke();
+    if(yMin<0){ gx.lineWidth=1.5; gx.setLineDash([6,4]); gx.beginPath(); gx.moveTo(m.l,Y(0)); gx.lineTo(m.l+pw,Y(0)); gx.stroke(); gx.setLineDash([]); }
+    gx.fillStyle="#1d2a22"; gx.font="600 16px Inter";
+    gx.fillText(VARS[iv].name+(VARS[iv].unit?" ("+VARS[iv].unit+")":"")+"  — independent variable", m.l+pw/2, GH-22);
+    const yl = which==="both" ? "Gas exchange rate (µmol/min)" : SERIES[which].name+" (µmol/min)";
+    gx.save(); gx.translate(26,m.t+ph/2); gx.rotate(-Math.PI/2); gx.fillText(yl,0,0); gx.restore();
+
+    if(!data.length){
+      gx.fillStyle="#8a978e"; gx.font="500 17px Inter"; gx.fillText("Run trials to plot your data here.", m.l+pw/2, m.t+ph/2); return;
+    }
+    if(cat){
+      const slot=pw/list.length*0.6, bw=slot/keys.length;
+      for(const g of gs){
+        keys.forEach((k,j)=>{
+          const xx=X(g.key)-slot/2+j*bw, v=g[k], y0=Y(0), y1=Y(v);
+          gx.fillStyle=SERIES[k].c; gx.globalAlpha=.85; gx.fillRect(xx+2,Math.min(y0,y1),bw-4,Math.abs(y0-y1)); gx.globalAlpha=1;
+          gx.fillStyle="#1d2a22"; gx.font="700 13px Inter"; gx.fillText(v.toFixed(2),xx+bw/2,v>=0?y1-8:y1+18);
+          if($("showTrials").checked) g.trials.forEach((t,i)=>dot(xx+bw/2+(i-(g.trials.length-1)/2)*8,Y(t[k]),4,"#fff","#2f3a34"));
+        });
+      }
+    } else {
+      keys.forEach((k,j)=>{
+        const off = keys.length>1 ? (j?4:-4) : 0;
+        if($("showTrials").checked) for(const d of data) dot(X(d[iv])+off,Y(d[k]),5,SERIES[k].soft,SERIES[k].soft);
+        if($("showLine").checked && gs.length>1){
+          gx.strokeStyle=SERIES[k].c; gx.lineWidth=3; if(k==="co2use") gx.setLineDash([10,6]); gx.beginPath();
+          gs.forEach((g,i)=>{ const xx=X(g.key)+off,yy=Y(g[k]); i?gx.lineTo(xx,yy):gx.moveTo(xx,yy); }); gx.stroke(); gx.setLineDash([]);
+        }
+        for(const g of gs) dot(X(g.key)+off,Y(g[k]),7,SERIES[k].c,"#fff");
+      });
+    }
+  }
+  function dot(x,y,r,fill,stroke){ gx.beginPath(); gx.arc(x,y,r,0,7); gx.fillStyle=fill; gx.fill(); gx.lineWidth=2; gx.strokeStyle=stroke; gx.stroke(); }
+
+  // init
+  refreshLabels(); renderTable(); drawGraph();
+  requestAnimationFrame(t=>{ last=t; frame(t); });
+})();
+</script>
+</body>
+</html>
